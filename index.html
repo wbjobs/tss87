@@ -301,6 +301,303 @@
             height: 10px;
             border-radius: 2px;
         }
+
+        .anomaly-overlay {
+            pointer-events: none;
+            fill: none;
+            stroke: #ff3333;
+            stroke-width: 3;
+            opacity: 0;
+        }
+
+        .anomaly-overlay.active {
+            animation: anomaly-pulse 0.8s infinite;
+        }
+
+        @keyframes anomaly-pulse {
+            0%, 100% {
+                opacity: 0;
+                stroke-width: 3;
+            }
+            50% {
+                opacity: 1;
+                stroke-width: 5;
+            }
+        }
+
+        .anomaly-ring {
+            pointer-events: none;
+            fill: none;
+            stroke: #ff4444;
+            stroke-width: 4;
+            opacity: 0;
+        }
+
+        .anomaly-ring.active {
+            animation: ring-pulse 0.6s infinite;
+        }
+
+        @keyframes ring-pulse {
+            0%, 100% {
+                opacity: 0.3;
+                stroke-width: 2;
+            }
+            50% {
+                opacity: 1;
+                stroke-width: 6;
+            }
+        }
+
+        .alert-panel {
+            max-height: 220px;
+            overflow-y: auto;
+            margin-top: 5px;
+        }
+
+        .alert-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .alert-panel::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .alert-panel::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+
+        .alert-item {
+            background: rgba(255, 68, 68, 0.1);
+            border-left: 3px solid #ff4444;
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            font-size: 11px;
+        }
+
+        .alert-item.new {
+            animation: alert-flash 1s ease-out;
+        }
+
+        @keyframes alert-flash {
+            0% {
+                background: rgba(255, 68, 68, 0.4);
+            }
+            100% {
+                background: rgba(255, 68, 68, 0.1);
+            }
+        }
+
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .alert-syscall {
+            font-weight: 600;
+            color: #ff6b6b;
+        }
+
+        .alert-time {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 10px;
+        }
+
+        .alert-msg {
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.4;
+        }
+
+        .alert-badge {
+            display: inline-block;
+            background: #ff4444;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 6px;
+            animation: badge-pulse 1s infinite;
+        }
+
+        @keyframes badge-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .timeline-container {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .timeline-title {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            padding: 2px;
+        }
+
+        .mode-btn {
+            padding: 4px 10px;
+            font-size: 11px;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.5);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-btn:hover {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(90deg, #00d4ff, #7b2ff7);
+            color: white;
+            font-weight: 500;
+        }
+
+        .timeline-slider {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+            margin: 10px 0;
+        }
+
+        .timeline-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+            transition: transform 0.2s;
+        }
+
+        .timeline-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .timeline-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        .timeline-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .timeline-current {
+            text-align: center;
+            font-size: 13px;
+            color: #00d4ff;
+            font-weight: 500;
+            margin-top: 6px;
+        }
+
+        .timeline-slider:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .replay-indicator {
+            position: absolute;
+            top: 15px;
+            right: 120px;
+            background: rgba(255, 170, 0, 0.9);
+            color: #000;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            display: none;
+            animation: replay-blink 1s infinite;
+        }
+
+        .replay-indicator.active {
+            display: block;
+        }
+
+        @keyframes replay-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .playback-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 8px;
+        }
+
+        .play-btn {
+            padding: 5px 12px;
+            font-size: 11px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.8);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .play-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .play-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .playback-speed {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-left: auto;
+        }
+
+        .speed-select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
     </style>
 </head>
 <body>
@@ -320,18 +617,59 @@
         <div class="main-content">
             <div class="chart-container">
                 <div class="chart-title">📊 系统调用分布 - 旭日图</div>
+                <div class="replay-indicator" id="replayIndicator">⏪ 历史回放模式</div>
                 <div class="connection-status">
                     <span class="status-dot" id="statusDot"></span>
                     <span id="statusText">连接中...</span>
                 </div>
                 <svg id="sunburst"></svg>
                 <div class="tooltip" id="tooltip"></div>
+
+                <div class="timeline-container">
+                    <div class="timeline-header">
+                        <div class="timeline-title">⏱️ 时间轴回放</div>
+                        <div class="mode-toggle">
+                            <button class="mode-btn active" id="liveModeBtn" onclick="setMode('live')">实时</button>
+                            <button class="mode-btn" id="replayModeBtn" onclick="setMode('replay')">回放</button>
+                        </div>
+                    </div>
+                    <input type="range" class="timeline-slider" id="timelineSlider" min="0" max="300" value="0" disabled>
+                    <div class="timeline-labels">
+                        <span id="timelineStart">-5:00</span>
+                        <span id="timelineEnd">现在</span>
+                    </div>
+                    <div class="timeline-current" id="timelineCurrent">--:--:--</div>
+                    <div class="playback-controls">
+                        <button class="play-btn" id="prevBtn" onclick="stepTime(-1)" disabled>⏮</button>
+                        <button class="play-btn" id="playBtn" onclick="togglePlayback()" disabled>▶</button>
+                        <button class="play-btn" id="nextBtn" onclick="stepTime(1)" disabled>⏭</button>
+                        <span class="playback-speed">
+                            速度:
+                            <select class="speed-select" id="speedSelect" onchange="setPlaybackSpeed(this.value)" disabled>
+                                <option value="0.5">0.5x</option>
+                                <option value="1" selected>1x</option>
+                                <option value="2">2x</option>
+                                <option value="4">4x</option>
+                            </select>
+                        </span>
+                    </div>
+                </div>
             </div>
 
             <div class="side-panel">
                 <div class="stats-card">
-                    <h3>📁 分类统计</h3>
+                    <h3>
+                        📁 分类统计
+                    </h3>
                     <div class="category-stats" id="categoryStats"></div>
+                </div>
+
+                <div class="stats-card">
+                    <h3>
+                        🚨 告警日志
+                        <span class="alert-badge" id="alertBadge" style="display:none;">0</span>
+                    </h3>
+                    <div class="alert-panel" id="alertPanel"></div>
                 </div>
 
                 <div class="stats-card">
@@ -406,14 +744,25 @@
 
         let ws = null;
         let currentData = null;
+        let liveData = null;
         let historyData = { windows: [], total_count: 0, total_time: 0 };
-        let svg, root, arc, radius, pathsGroup, centerValueEl;
+        let fullHistory = [];
+        let svg, root, arc, radius, centerValueEl, anomalyLayer;
         let tooltipEl;
 
         let pendingData = null;
         let renderScheduled = false;
         let isTransitioning = false;
         let lastHistoryUpdate = 0;
+
+        let mode = 'live';
+        let replayIndex = -1;
+        let isPlaying = false;
+        let playbackTimer = null;
+        let playbackSpeed = 1;
+
+        let activeAnomalies = new Set();
+        let anomalyTimers = {};
 
         const rateValueEl = document.getElementById('rateValue');
         const categoryStatsEl = document.getElementById('categoryStats');
@@ -425,6 +774,22 @@
         const lastUpdateEl = document.getElementById('lastUpdate');
         const statusDotEl = document.getElementById('statusDot');
         const statusTextEl = document.getElementById('statusText');
+        const alertPanelEl = document.getElementById('alertPanel');
+        const alertBadgeEl = document.getElementById('alertBadge');
+        const timelineSliderEl = document.getElementById('timelineSlider');
+        const timelineStartEl = document.getElementById('timelineStart');
+        const timelineEndEl = document.getElementById('timelineEnd');
+        const timelineCurrentEl = document.getElementById('timelineCurrent');
+        const liveModeBtn = document.getElementById('liveModeBtn');
+        const replayModeBtn = document.getElementById('replayModeBtn');
+        const replayIndicator = document.getElementById('replayIndicator');
+        const prevBtn = document.getElementById('prevBtn');
+        const playBtn = document.getElementById('playBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const speedSelectEl = document.getElementById('speedSelect');
+
+        let alertCount = 0;
+        let seenAlertIds = new Set();
 
         function initChart() {
             const container = document.querySelector('.chart-container');
@@ -437,6 +802,8 @@
                 .attr('height', height)
                 .append('g')
                 .attr('transform', `translate(${width / 2}, ${height / 2})`);
+
+            anomalyLayer = svg.append('g').attr('class', 'anomaly-layer');
 
             arc = d3.arc()
                 .startAngle(d => d.x0)
@@ -514,6 +881,74 @@
             }
         }
 
+        function updateAnomalyHighlights(anomalies) {
+            if (!root) return;
+
+            if (!anomalies || anomalies.length === 0) {
+                activeAnomalies.forEach(syscall => {
+                    clearTimeout(anomalyTimers[syscall]);
+                    delete anomalyTimers[syscall];
+                });
+                activeAnomalies.clear();
+                anomalyLayer.selectAll('*').remove();
+                return;
+            }
+
+            const anomalyNames = new Set(anomalies.map(a => a.syscall));
+            const allNodes = root.descendants().filter(d => d.depth > 0);
+
+            anomalies.forEach(anomaly => {
+                if (!activeAnomalies.has(anomaly.syscall)) {
+                    activeAnomalies.add(anomaly.syscall);
+                    showNotification(anomaly);
+                }
+                clearTimeout(anomalyTimers[anomaly.syscall]);
+                anomalyTimers[anomaly.syscall] = setTimeout(() => {
+                    activeAnomalies.delete(anomaly.syscall);
+                    delete anomalyTimers[anomaly.syscall];
+                    renderAnomalyHighlight();
+                }, 10000);
+            });
+
+            renderAnomalyHighlight();
+        }
+
+        function renderAnomalyHighlight() {
+            if (!root) {
+                anomalyLayer.selectAll('*').remove();
+                return;
+            }
+
+            const allNodes = root.descendants().filter(d => d.depth > 0);
+            const activeNodes = allNodes.filter(d => activeAnomalies.has(d.data.name));
+
+            const rings = anomalyLayer.selectAll('path.anomaly-ring')
+                .data(activeNodes, d => d.data.name);
+
+            rings.exit().remove();
+
+            const ringsEnter = rings.enter()
+                .append('path')
+                .attr('class', 'anomaly-ring active')
+                .attr('fill', 'none')
+                .attr('stroke', '#ff3333')
+                .attr('stroke-width', 4)
+                .attr('d', arc);
+
+            ringsEnter.merge(rings)
+                .attr('d', arc)
+                .each(function(d) {
+                    const current = d3.select(this);
+                    if (!current.classed('active')) {
+                        current.classed('active', true);
+                    }
+                });
+        }
+
+        function showNotification(anomaly) {
+            console.log(`%c⚠️  ANOMALY: ${anomaly.message}`, 'color: #ff4444; font-weight: bold; font-size: 12px;');
+        }
+
         function renderChart(data) {
             const hierarchy = buildHierarchy(data);
 
@@ -529,8 +964,7 @@
             const paths = svg.selectAll('path.arc-path')
                 .data(allNodes, d => d.data.name + "_" + d.depth);
 
-            paths.exit()
-                .remove();
+            paths.exit().remove();
 
             const pathsEnter = paths.enter()
                 .append('path')
@@ -549,7 +983,7 @@
 
             const merged = pathsEnter.merge(paths);
 
-            if (isTransitioning) {
+            if (isTransitioning || mode === 'replay') {
                 merged
                     .attr('d', arc)
                     .attr('fill', d => getChildColor(d))
@@ -572,6 +1006,7 @@
             }
 
             centerValueEl.text(formatNumber(data.total_count));
+            renderAnomalyHighlight();
         }
 
         function showTooltip(event, d) {
@@ -582,13 +1017,17 @@
             const totalTime = d.data.total_time || 0;
             const avgTime = count > 0 ? (totalTime / count).toFixed(3) : 0;
             const percent = root ? ((count / root.value) * 100).toFixed(1) : '0.0';
+            const isAnomaly = activeAnomalies.has(name);
 
-            let html = `<div class="tip-title">${displayName}</div>`;
+            let html = `<div class="tip-title">${displayName}${isAnomaly ? ' <span style="color:#ff4444">⚠️</span>' : ''}</div>`;
             html += `<div class="tip-row"><span class="tip-label">调用次数</span><span class="tip-value">${formatNumber(count)}</span></div>`;
             html += `<div class="tip-row"><span class="tip-label">占比</span><span class="tip-value">${percent}%</span></div>`;
             html += `<div class="tip-row"><span class="tip-label">总耗时</span><span class="tip-value">${Number(totalTime).toFixed(2)} ms</span></div>`;
             if (d.depth > 1) {
                 html += `<div class="tip-row"><span class="tip-label">平均耗时</span><span class="tip-value">${avgTime} ms</span></div>`;
+            }
+            if (isAnomaly) {
+                html += `<div style="color:#ff4444;margin-top:4px;font-weight:600;">⚠️ 速率异常 (≥3x基准)</div>`;
             }
 
             tooltipEl.innerHTML = html;
@@ -616,6 +1055,9 @@
                     if (d) {
                         try {
                             renderChart(d);
+                            if (d.anomalies) {
+                                updateAnomalyHighlights(d.anomalies);
+                            }
                         } catch (e) {
                             console.warn('Render error:', e);
                         }
@@ -679,13 +1121,52 @@
             let html = '';
             for (let i = 0; i < sorted.length; i++) {
                 const [name, info] = sorted[i];
-                html += `<div class="category-item">
+                const isAnomaly = activeAnomalies.has(name);
+                html += `<div class="category-item" style="${isAnomaly ? 'background:rgba(255,68,68,0.1);border-radius:4px;' : ''}">
                     <div class="category-color" style="background:${colors[i]}"></div>
-                    <div class="category-name">${name}</div>
+                    <div class="category-name">${name}${isAnomaly ? ' <span style="color:#ff4444">⚠</span>' : ''}</div>
                     <div class="category-count">${formatNumber(info.count)}</div>
                 </div>`;
             }
             topSyscallsEl.innerHTML = html;
+        }
+
+        function updateAlerts(alerts) {
+            if (!alerts || alerts.length === 0) return;
+
+            let newAlerts = [];
+            for (const alert of alerts) {
+                if (!seenAlertIds.has(alert.id)) {
+                    seenAlertIds.add(alert.id);
+                    newAlerts.push(alert);
+                    alertCount++;
+                }
+            }
+
+            if (newAlerts.length > 0) {
+                alertBadgeEl.style.display = 'inline-block';
+                alertBadgeEl.textContent = alertCount;
+                renderAlerts(newAlerts);
+            }
+        }
+
+        function renderAlerts(alerts) {
+            if (!alerts || alerts.length === 0) return;
+
+            let html = '';
+            for (const alert of alerts) {
+                const timeStr = new Date(alert.timestamp * 1000).toLocaleTimeString('zh-CN');
+                html += `
+                    <div class="alert-item new">
+                        <div class="alert-header">
+                            <span class="alert-syscall">${alert.syscall}</span>
+                            <span class="alert-time">${timeStr}</span>
+                        </div>
+                        <div class="alert-msg">${alert.message}</div>
+                    </div>
+                `;
+            }
+            alertPanelEl.innerHTML = html + alertPanelEl.innerHTML;
         }
 
         function updateHistorySummary() {
@@ -724,6 +1205,155 @@
             lastUpdateEl.textContent = '最后更新: ' + new Date().toLocaleTimeString('zh-CN');
         }
 
+        function setMode(newMode) {
+            if (mode === newMode) return;
+
+            mode = newMode;
+
+            if (mode === 'live') {
+                liveModeBtn.classList.add('active');
+                replayModeBtn.classList.remove('active');
+                replayIndicator.classList.remove('active');
+                timelineSliderEl.disabled = true;
+                prevBtn.disabled = true;
+                playBtn.disabled = true;
+                nextBtn.disabled = true;
+                speedSelectEl.disabled = true;
+
+                stopPlayback();
+
+                if (liveData) {
+                    currentData = liveData;
+                    scheduleRender(currentData);
+                    updateRatePanel(currentData.rate || currentData.total_count || 0);
+                    updateCategoryStats(currentData);
+                    updateTopSyscalls(currentData);
+                    updateTimeline();
+                }
+            } else {
+                liveModeBtn.classList.remove('active');
+                replayModeBtn.classList.add('active');
+                replayIndicator.classList.add('active');
+                timelineSliderEl.disabled = false;
+                prevBtn.disabled = false;
+                playBtn.disabled = false;
+                nextBtn.disabled = false;
+                speedSelectEl.disabled = false;
+
+                if (fullHistory.length === 0) {
+                    ws && ws.send(JSON.stringify({ type: 'get_full_history' }));
+                }
+
+                if (replayIndex < 0 && fullHistory.length > 0) {
+                    replayIndex = fullHistory.length - 1;
+                    loadReplayIndex();
+                }
+            }
+        }
+
+        function updateTimeline() {
+            if (fullHistory.length === 0) return;
+
+            const maxIdx = fullHistory.length - 1;
+            timelineSliderEl.max = maxIdx;
+
+            const startTime = fullHistory[0].timestamp;
+            const endTime = fullHistory[maxIdx].timestamp;
+
+            const startOffset = Math.floor((endTime - startTime) / 60);
+            timelineStartEl.textContent = startOffset > 0 ? `-${startOffset}:00` : '开始';
+            timelineEndEl.textContent = '现在';
+
+            if (mode === 'live') {
+                timelineSliderEl.value = maxIdx;
+                updateTimelineCurrent(endTime);
+            }
+        }
+
+        function updateTimelineCurrent(timestamp) {
+            const dt = new Date(timestamp * 1000);
+            timelineCurrentEl.textContent = dt.toLocaleTimeString('zh-CN');
+        }
+
+        function loadReplayIndex() {
+            if (replayIndex < 0 || replayIndex >= fullHistory.length) return;
+
+            const data = fullHistory[replayIndex];
+            currentData = data;
+            timelineSliderEl.value = replayIndex;
+
+            scheduleRender(data);
+            updateRatePanel(data.rate || data.total_count || 0);
+            updateCategoryStats(data);
+            updateTopSyscalls(data);
+            updateTimelineCurrent(data.timestamp);
+            updateAnomalyHighlights(data.anomalies || []);
+        }
+
+        function stepTime(delta) {
+            if (mode !== 'replay' || fullHistory.length === 0) return;
+            const newIdx = Math.max(0, Math.min(fullHistory.length - 1, replayIndex + delta));
+            if (newIdx !== replayIndex) {
+                replayIndex = newIdx;
+                loadReplayIndex();
+            }
+        }
+
+        function togglePlayback() {
+            if (mode !== 'replay') return;
+
+            if (isPlaying) {
+                stopPlayback();
+                playBtn.textContent = '▶';
+            } else {
+                startPlayback();
+                playBtn.textContent = '⏸';
+            }
+        }
+
+        function startPlayback() {
+            if (isPlaying) return;
+            isPlaying = true;
+
+            const tick = () => {
+                if (!isPlaying || mode !== 'replay') return;
+
+                if (replayIndex >= fullHistory.length - 1) {
+                    stopPlayback();
+                    playBtn.textContent = '▶';
+                    return;
+                }
+
+                replayIndex++;
+                loadReplayIndex();
+
+                const interval = 1000 / playbackSpeed;
+                playbackTimer = setTimeout(tick, interval);
+            };
+
+            tick();
+        }
+
+        function stopPlayback() {
+            isPlaying = false;
+            if (playbackTimer) {
+                clearTimeout(playbackTimer);
+                playbackTimer = null;
+            }
+        }
+
+        function setPlaybackSpeed(speed) {
+            playbackSpeed = parseFloat(speed);
+        }
+
+        timelineSliderEl && timelineSliderEl.addEventListener('input', function() {
+            if (mode !== 'replay') return;
+            stopPlayback();
+            playBtn.textContent = '▶';
+            replayIndex = parseInt(this.value);
+            loadReplayIndex();
+        });
+
         function connectWebSocket() {
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const wsUrl = `${protocol}//${window.location.hostname}:8765`;
@@ -750,23 +1380,52 @@
                             historyData.windows = fullWindows;
                         }
                         updateHistorySummary();
+                    } else if (message.type === 'alerts') {
+                        updateAlerts(message.data);
+                    } else if (message.type === 'full_history') {
+                        fullHistory = message.data.windows || [];
+                        updateTimeline();
+                        if (mode === 'replay' && replayIndex < 0 && fullHistory.length > 0) {
+                            replayIndex = fullHistory.length - 1;
+                            loadReplayIndex();
+                        }
+                    } else if (message.type === 'historical_data') {
                     } else if (message.type === 'update') {
-                        currentData = message.data;
+                        liveData = message.data;
 
-                        updateRatePanel(currentData.rate || currentData.total_count || 0);
-                        scheduleRender(currentData);
-                        updateCategoryStats(currentData);
-                        updateTopSyscalls(currentData);
-                        updateLastUpdate();
+                        if (mode === 'live') {
+                            currentData = liveData;
+                            updateRatePanel(currentData.rate || currentData.total_count || 0);
+                            scheduleRender(currentData);
+                            updateCategoryStats(currentData);
+                            updateTopSyscalls(currentData);
+                            updateLastUpdate();
+                            updateAnomalyHighlights(currentData.anomalies || []);
+                            if (currentData.anomalies && currentData.anomalies.length > 0) {
+                                setTimeout(() => updateAlerts(currentData.anomalies), 100);
+                            }
 
-                        historyData.windows.push(currentData);
+                            fullHistory.push(currentData);
+                            if (fullHistory.length > 300) {
+                                fullHistory.shift();
+                            }
+                            updateTimeline();
+                        } else {
+                            fullHistory.push(currentData);
+                            if (fullHistory.length > 300) {
+                                fullHistory.shift();
+                            }
+                            updateTimeline();
+                        }
+
+                        historyData.windows.push(liveData);
                         if (historyData.windows.length > 300) {
                             const removed = historyData.windows.shift();
                             historyData.total_count = (historyData.total_count || 0) - (removed.total_count || 0);
                             historyData.total_time = (historyData.total_time || 0) - (removed.total_time || 0);
                         } else {
-                            historyData.total_count = (historyData.total_count || 0) + (currentData.total_count || 0);
-                            historyData.total_time = (historyData.total_time || 0) + (currentData.total_time || 0);
+                            historyData.total_count = (historyData.total_count || 0) + (liveData.total_count || 0);
+                            historyData.total_time = (historyData.total_time || 0) + (liveData.total_time || 0);
                         }
 
                         const nowT = Date.now();
@@ -797,6 +1456,7 @@
             initChart();
             if (currentData) {
                 renderChart(currentData);
+                renderAnomalyHighlight();
             }
         }
 
