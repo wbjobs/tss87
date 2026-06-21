@@ -389,10 +389,42 @@
             .domain(Object.keys(categoryColors))
             .range(Object.values(categoryColors));
 
+        const syscallCategories = {
+            "file_ops": ["open", "read", "write", "close", "creat", "unlink", "rename", "stat", "fstat", "lseek"],
+            "network": ["socket", "connect", "accept", "send", "recv", "bind", "listen"],
+            "process": ["fork", "execve", "exit", "wait", "kill", "getpid", "getppid"],
+            "memory": ["mmap", "munmap", "brk", "sbrk", "mprotect"],
+            "time": ["time", "gettimeofday", "clock_gettime", "nanosleep", "usleep"]
+        };
+
+        const syscallToCategory = {};
+        for (const [cat, syscalls] of Object.entries(syscallCategories)) {
+            for (const s of syscalls) {
+                syscallToCategory[s] = cat;
+            }
+        }
+
         let ws = null;
         let currentData = null;
         let historyData = { windows: [], total_count: 0, total_time: 0 };
-        let svg, root, arc, radius;
+        let svg, root, arc, radius, pathsGroup, centerValueEl;
+        let tooltipEl;
+
+        let pendingData = null;
+        let renderScheduled = false;
+        let isTransitioning = false;
+        let lastHistoryUpdate = 0;
+
+        const rateValueEl = document.getElementById('rateValue');
+        const categoryStatsEl = document.getElementById('categoryStats');
+        const topSyscallsEl = document.getElementById('topSyscalls');
+        const totalCallsEl = document.getElementById('totalCalls');
+        const totalTimeEl = document.getElementById('totalTime');
+        const avgRateEl = document.getElementById('avgRate');
+        const windowCountEl = document.getElementById('windowCount');
+        const lastUpdateEl = document.getElementById('lastUpdate');
+        const statusDotEl = document.getElementById('statusDot');
+        const statusTextEl = document.getElementById('statusText');
 
         function initChart() {
             const container = document.querySelector('.chart-container');
@@ -419,59 +451,55 @@
                 .attr('y', -10)
                 .text('总调用');
 
-            svg.append('text')
+            centerValueEl = svg.append('text')
                 .attr('class', 'center-value')
-                .attr('id', 'centerValue')
                 .attr('y', 20)
                 .text('0');
+
+            tooltipEl = document.getElementById('tooltip');
         }
 
         function buildHierarchy(data) {
             const perCategory = data.per_category || {};
             const perSyscall = data.per_syscall || {};
 
-            const categoryMap = {};
+            const children = [];
             for (const [cat, info] of Object.entries(perCategory)) {
-                categoryMap[cat] = {
+                if (info.count <= 0) continue;
+
+                const syscalls = [];
+                const catSyscalls = syscallCategories[cat] || [];
+                for (const syscall of catSyscalls) {
+                    const info2 = perSyscall[syscall];
+                    if (info2 && info2.count > 0) {
+                        syscalls.push({
+                            name: syscall,
+                            count: info2.count,
+                            total_time: info2.total_time
+                        });
+                    }
+                }
+                for (const [syscall, info2] of Object.entries(perSyscall)) {
+                    if (syscallToCategory[syscall] !== cat) continue;
+                    if (syscalls.some(s => s.name === syscall)) continue;
+                    if (info2.count > 0) {
+                        syscalls.push({
+                            name: syscall,
+                            count: info2.count,
+                            total_time: info2.total_time
+                        });
+                    }
+                }
+
+                children.push({
                     name: cat,
                     count: info.count,
                     total_time: info.total_time,
-                    children: []
-                };
+                    children: syscalls
+                });
             }
 
-            const syscallToCategory = {};
-            const syscallCategories = {
-                "file_ops": ["open", "read", "write", "close", "creat", "unlink", "rename", "stat", "fstat", "lseek"],
-                "network": ["socket", "connect", "accept", "send", "recv", "bind", "listen"],
-                "process": ["fork", "execve", "exit", "wait", "kill", "getpid", "getppid"],
-                "memory": ["mmap", "munmap", "brk", "sbrk", "mprotect"],
-                "time": ["time", "gettimeofday", "clock_gettime", "nanosleep", "usleep"]
-            };
-
-            for (const [cat, syscalls] of Object.entries(syscallCategories)) {
-                for (const s of syscalls) {
-                    syscallToCategory[s] = cat;
-                }
-            }
-
-            for (const [syscall, info] of Object.entries(perSyscall)) {
-                const cat = syscallToCategory[syscall] || "file_ops";
-                if (categoryMap[cat]) {
-                    categoryMap[cat].children.push({
-                        name: syscall,
-                        count: info.count,
-                        total_time: info.total_time
-                    });
-                }
-            }
-
-            const root = {
-                name: "root",
-                children: Object.values(categoryMap).filter(c => c.count > 0)
-            };
-
-            return root;
+            return { name: "root", children };
         }
 
         function getChildColor(d) {
@@ -479,14 +507,16 @@
                 return categoryColorScale(d.data.name);
             } else {
                 const parentColor = d3.color(categoryColorScale(d.parent.data.name));
-                const lightness = 0.5 + (d.index / (d.parent.children ? d.parent.children.length : 1)) * 0.3;
+                if (!parentColor) return "#888";
+                const len = d.parent.children ? d.parent.children.length : 1;
+                const lightness = 0.3 + (d.index / len) * 0.4;
                 return parentColor.brighter(lightness);
             }
         }
 
-        function updateChart(data) {
+        function renderChart(data) {
             const hierarchy = buildHierarchy(data);
-            
+
             root = d3.hierarchy(hierarchy)
                 .sum(d => d.count || 0)
                 .sort((a, b) => b.value - a.value);
@@ -494,19 +524,12 @@
             d3.partition()
                 .size([2 * Math.PI, radius])(root);
 
-            const paths = svg.selectAll('path')
-                .data(root.descendants().filter(d => d.depth));
+            const allNodes = root.descendants().filter(d => d.depth);
+
+            const paths = svg.selectAll('path.arc-path')
+                .data(allNodes, d => d.data.name + "_" + d.depth);
 
             paths.exit()
-                .transition()
-                .duration(750)
-                .attrTween('d', d => {
-                    const interpolate = d3.interpolate(d.x0, d.x0);
-                    return t => {
-                        d.x0 = d.x1 = interpolate(t);
-                        return arc(d);
-                    };
-                })
                 .remove();
 
             const pathsEnter = paths.enter()
@@ -524,158 +547,187 @@
                     hideTooltip();
                 });
 
-            paths.merge(pathsEnter)
-                .transition()
-                .duration(750)
-                .attrTween('d', function(d) {
-                    const old = this._current || { x0: 0, x1: 0, y0: d.y0, y1: d.y1 };
-                    const interpolate = d3.interpolate(old, d);
-                    this._current = d;
-                    return t => arc(interpolate(t));
-                })
-                .attr('fill', d => getChildColor(d));
+            const merged = pathsEnter.merge(paths);
 
-            document.getElementById('centerValue').textContent = formatNumber(data.total_count);
+            if (isTransitioning) {
+                merged
+                    .attr('d', arc)
+                    .attr('fill', d => getChildColor(d))
+                    .each(function(d) { this._current = d; });
+            } else {
+                isTransitioning = true;
+                merged
+                    .transition()
+                    .duration(400)
+                    .ease(d3.easeLinear)
+                    .attrTween('d', function(d) {
+                        const old = this._current || { x0: d.x0, x1: d.x0, y0: d.y0, y1: d.y1 };
+                        const interpolate = d3.interpolate(old, d);
+                        this._current = d;
+                        return t => arc(interpolate(t));
+                    })
+                    .attr('fill', d => getChildColor(d))
+                    .on('end', () => { isTransitioning = false; })
+                    .on('interrupt', () => { isTransitioning = false; });
+            }
+
+            centerValueEl.text(formatNumber(data.total_count));
         }
 
         function showTooltip(event, d) {
-            const tooltip = document.getElementById('tooltip');
+            if (!tooltipEl) return;
             const name = d.data.name;
             const displayName = categoryNames[name] || name;
             const count = d.value;
             const totalTime = d.data.total_time || 0;
             const avgTime = count > 0 ? (totalTime / count).toFixed(3) : 0;
-            const percent = ((count / root.value) * 100).toFixed(1);
+            const percent = root ? ((count / root.value) * 100).toFixed(1) : '0.0';
 
             let html = `<div class="tip-title">${displayName}</div>`;
             html += `<div class="tip-row"><span class="tip-label">调用次数</span><span class="tip-value">${formatNumber(count)}</span></div>`;
             html += `<div class="tip-row"><span class="tip-label">占比</span><span class="tip-value">${percent}%</span></div>`;
-            html += `<div class="tip-row"><span class="tip-label">总耗时</span><span class="tip-value">${totalTime.toFixed(2)} ms</span></div>`;
+            html += `<div class="tip-row"><span class="tip-label">总耗时</span><span class="tip-value">${Number(totalTime).toFixed(2)} ms</span></div>`;
             if (d.depth > 1) {
                 html += `<div class="tip-row"><span class="tip-label">平均耗时</span><span class="tip-value">${avgTime} ms</span></div>`;
             }
 
-            tooltip.innerHTML = html;
-            tooltip.style.opacity = '1';
+            tooltipEl.innerHTML = html;
+            tooltipEl.style.opacity = '1';
         }
 
         function moveTooltip(event) {
-            const tooltip = document.getElementById('tooltip');
-            const x = event.pageX + 15;
-            const y = event.pageY + 15;
-            tooltip.style.left = x + 'px';
-            tooltip.style.top = y + 'px';
+            if (!tooltipEl) return;
+            tooltipEl.style.left = (event.pageX + 15) + 'px';
+            tooltipEl.style.top = (event.pageY + 15) + 'px';
         }
 
         function hideTooltip() {
-            document.getElementById('tooltip').style.opacity = '0';
+            if (tooltipEl) tooltipEl.style.opacity = '0';
         }
 
+        function scheduleRender(data) {
+            pendingData = data;
+            if (!renderScheduled) {
+                renderScheduled = true;
+                requestAnimationFrame(() => {
+                    renderScheduled = false;
+                    const d = pendingData;
+                    pendingData = null;
+                    if (d) {
+                        try {
+                            renderChart(d);
+                        } catch (e) {
+                            console.warn('Render error:', e);
+                        }
+                    }
+                });
+            }
+        }
+
+        let lastRate = 0;
+        let rateAnimFrame = null;
         function updateRatePanel(rate) {
-            const el = document.getElementById('rateValue');
-            const current = parseInt(el.textContent.replace(/,/g, '')) || 0;
-            animateValue(el, current, rate, 500);
+            if (rateAnimFrame) return;
+            const start = lastRate;
+            const end = rate;
+            const startTime = performance.now();
+            const duration = 400;
+
+            function step(now) {
+                const t = Math.min((now - startTime) / duration, 1);
+                const ease = 1 - Math.pow(1 - t, 3);
+                const cur = Math.round(start + (end - start) * ease);
+                rateValueEl.textContent = formatNumber(cur);
+                if (t < 1) {
+                    rateAnimFrame = requestAnimationFrame(step);
+                } else {
+                    rateAnimFrame = null;
+                    lastRate = end;
+                }
+            }
+            rateAnimFrame = requestAnimationFrame(step);
         }
 
         function updateCategoryStats(data) {
-            const container = document.getElementById('categoryStats');
             const perCategory = data.per_category || {};
             const total = data.total_count || 1;
 
             const sorted = Object.entries(perCategory)
                 .sort((a, b) => b[1].count - a[1].count);
 
-            container.innerHTML = sorted.map(([cat, info]) => {
+            let html = '';
+            for (const [cat, info] of sorted) {
                 const percent = ((info.count / total) * 100).toFixed(1);
-                return `
-                    <div class="category-item">
-                        <div class="category-color" style="background: ${categoryColors[cat]}"></div>
-                        <div class="category-name">${categoryNames[cat] || cat}</div>
-                        <div class="category-count">${formatNumber(info.count)}</div>
-                        <div class="category-percent">${percent}%</div>
-                    </div>
-                `;
-            }).join('');
+                html += `<div class="category-item">
+                    <div class="category-color" style="background:${categoryColors[cat]}"></div>
+                    <div class="category-name">${categoryNames[cat] || cat}</div>
+                    <div class="category-count">${formatNumber(info.count)}</div>
+                    <div class="category-percent">${percent}%</div>
+                </div>`;
+            }
+            categoryStatsEl.innerHTML = html;
         }
 
         function updateTopSyscalls(data) {
-            const container = document.getElementById('topSyscalls');
             const perSyscall = data.per_syscall || {};
+            const colors = ['#00d4ff', '#7b2ff7', '#ff6b6b', '#4ecdc4', '#ffd93d'];
 
             const sorted = Object.entries(perSyscall)
                 .sort((a, b) => b[1].count - a[1].count)
                 .slice(0, 5);
 
-            container.innerHTML = sorted.map(([name, info], i) => {
-                const colors = ['#00d4ff', '#7b2ff7', '#ff6b6b', '#4ecdc4', '#ffd93d'];
-                return `
-                    <div class="category-item">
-                        <div class="category-color" style="background: ${colors[i]}"></div>
-                        <div class="category-name">${name}</div>
-                        <div class="category-count">${formatNumber(info.count)}</div>
-                    </div>
-                `;
-            }).join('');
+            let html = '';
+            for (let i = 0; i < sorted.length; i++) {
+                const [name, info] = sorted[i];
+                html += `<div class="category-item">
+                    <div class="category-color" style="background:${colors[i]}"></div>
+                    <div class="category-name">${name}</div>
+                    <div class="category-count">${formatNumber(info.count)}</div>
+                </div>`;
+            }
+            topSyscallsEl.innerHTML = html;
         }
 
         function updateHistorySummary() {
-            document.getElementById('totalCalls').textContent = formatNumber(historyData.total_count);
-            document.getElementById('totalTime').textContent = formatNumber(Math.round(historyData.total_time));
-            
-            const avgRate = historyData.windows.length > 0 
+            totalCallsEl.textContent = formatNumber(historyData.total_count);
+            totalTimeEl.textContent = formatNumber(Math.round(historyData.total_time || 0));
+
+            const avgRate = historyData.windows.length > 0
                 ? Math.round(historyData.total_count / historyData.windows.length)
                 : 0;
-            document.getElementById('avgRate').textContent = formatNumber(avgRate) + '/s';
-            document.getElementById('windowCount').textContent = historyData.windows.length + 's';
+            avgRateEl.textContent = formatNumber(avgRate) + '/s';
+            windowCountEl.textContent = historyData.windows.length + 's';
         }
 
+        const numberFormatter = new Intl.NumberFormat('zh-CN');
         function formatNumber(num) {
-            return new Intl.NumberFormat('zh-CN').format(Math.round(num));
-        }
-
-        function animateValue(element, start, end, duration) {
-            const startTime = performance.now();
-            
-            function update(currentTime) {
-                const elapsed = currentTime - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                const ease = 1 - Math.pow(1 - progress, 3);
-                const current = Math.round(start + (end - start) * ease);
-                element.textContent = formatNumber(current);
-                
-                if (progress < 1) {
-                    requestAnimationFrame(update);
-                }
-            }
-            
-            requestAnimationFrame(update);
+            return numberFormatter.format(Math.round(Number(num) || 0));
         }
 
         function updateStatus(connected) {
-            const dot = document.getElementById('statusDot');
-            const text = document.getElementById('statusText');
-            
             if (connected) {
-                dot.className = 'status-dot connected';
-                text.textContent = '已连接';
-                text.style.color = '#00ff88';
+                statusDotEl.className = 'status-dot connected';
+                statusTextEl.textContent = '已连接';
+                statusTextEl.style.color = '#00ff88';
             } else {
-                dot.className = 'status-dot disconnected';
-                text.textContent = '断开连接';
-                text.style.color = '#ff4444';
+                statusDotEl.className = 'status-dot disconnected';
+                statusTextEl.textContent = '断开连接';
+                statusTextEl.style.color = '#ff4444';
             }
         }
 
+        let lastTimeUpdate = 0;
         function updateLastUpdate() {
-            const now = new Date();
-            document.getElementById('lastUpdate').textContent = 
-                '最后更新: ' + now.toLocaleTimeString('zh-CN');
+            const now = Date.now();
+            if (now - lastTimeUpdate < 900) return;
+            lastTimeUpdate = now;
+            lastUpdateEl.textContent = '最后更新: ' + new Date().toLocaleTimeString('zh-CN');
         }
 
         function connectWebSocket() {
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const wsUrl = `${protocol}//${window.location.hostname}:8765`;
-            
+
             ws = new WebSocket(wsUrl);
 
             ws.onopen = () => {
@@ -684,30 +736,47 @@
             };
 
             ws.onmessage = (event) => {
-                const message = JSON.parse(event.data);
-                
-                if (message.type === 'history') {
-                    historyData = message.data;
-                    updateHistorySummary();
-                } else if (message.type === 'update') {
-                    currentData = message.data;
-                    
-                    updateRatePanel(currentData.rate);
-                    updateChart(currentData);
-                    updateCategoryStats(currentData);
-                    updateTopSyscalls(currentData);
-                    updateLastUpdate();
-                    
-                    historyData.windows.push(currentData);
-                    if (historyData.windows.length > 300) {
-                        const removed = historyData.windows.shift();
-                        historyData.total_count -= removed.total_count;
-                        historyData.total_time -= removed.total_time;
-                    } else {
-                        historyData.total_count += currentData.total_count;
-                        historyData.total_time += currentData.total_time;
+                try {
+                    const message = JSON.parse(event.data);
+
+                    if (message.type === 'history') {
+                        historyData = message.data;
+                        if (historyData.windows && historyData.windows.length) {
+                            const fullWindows = historyData.windows.map(w => ({
+                                timestamp: w.t,
+                                total_count: w.c,
+                                per_category: w.pc || {}
+                            }));
+                            historyData.windows = fullWindows;
+                        }
+                        updateHistorySummary();
+                    } else if (message.type === 'update') {
+                        currentData = message.data;
+
+                        updateRatePanel(currentData.rate || currentData.total_count || 0);
+                        scheduleRender(currentData);
+                        updateCategoryStats(currentData);
+                        updateTopSyscalls(currentData);
+                        updateLastUpdate();
+
+                        historyData.windows.push(currentData);
+                        if (historyData.windows.length > 300) {
+                            const removed = historyData.windows.shift();
+                            historyData.total_count = (historyData.total_count || 0) - (removed.total_count || 0);
+                            historyData.total_time = (historyData.total_time || 0) - (removed.total_time || 0);
+                        } else {
+                            historyData.total_count = (historyData.total_count || 0) + (currentData.total_count || 0);
+                            historyData.total_time = (historyData.total_time || 0) + (currentData.total_time || 0);
+                        }
+
+                        const nowT = Date.now();
+                        if (nowT - lastHistoryUpdate > 5000) {
+                            lastHistoryUpdate = nowT;
+                            updateHistorySummary();
+                        }
                     }
-                    updateHistorySummary();
+                } catch (e) {
+                    console.error('WS message error:', e);
                 }
             };
 
@@ -727,11 +796,11 @@
             d3.select('#sunburst').selectAll('*').remove();
             initChart();
             if (currentData) {
-                updateChart(currentData);
+                renderChart(currentData);
             }
         }
 
-        window.addEventListener('resize', debounce(resizeHandler, 250));
+        window.addEventListener('resize', debounce(resizeHandler, 300));
 
         function debounce(func, wait) {
             let timeout;
